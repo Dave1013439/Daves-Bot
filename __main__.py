@@ -1,42 +1,30 @@
-import openai
+# import openai
 # import chatbot
-import time
-import speech_recognition as sr
-import datetime
-import json
-import os
-import subprocess
-import webbrowser
-import ecapture as ec
-import pyttsx3
+import time, speech_recognition as sr, datetime, json, os, subprocess, webbrowser, ecapture as ec, pyttsx3, pyaudio, random, operator, feedparser, smtplib, ctypes, requests, shutil, threading
 from time import ctime, sleep
 import pyaudio
 from datetime import date
-import tkinter
-import random
-import operator
-import feedparser
-import smtplib
-import ctypes
-import requests
-import shutil
+# import tkinter
 from clint.textui import progress
 from ecapture import ecapture as ec
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
-# from playsound import playsound
-import pyowm
-import pyjokes
-import urllib
+from playsound import playsound
+# import pyowm
+# import pyjokes
+# import urllib
 from PIL import Image
-import tweepy
-import pytz
+# import tweepy
+# import pytz
 from gtts import gTTS
-import discord
-import wikipedia
+# import discord
+# import wikipedia
 if os.name == "nt":
     import win32api
     from win32con import VK_MEDIA_PLAY_PAUSE, VK_MEDIA_NEXT_TRACK, VK_MEDIA_PREV_TRACK, KEYEVENTF_EXTENDEDKEY
+
+from pydub import AudioSegment
+from pydub.playback import play
 
 # Get the current date and time
 now = datetime.datetime.now()
@@ -101,9 +89,17 @@ def main():
         except sr.UnknownValueError:
             print("Could not understand audio")
 
+def assistant_sound():
+    sound_file = os.path.join(os.getcwd().replace("\\", "/"), "sounds/assistant_activated.mp3")
+    playsound(sound_file)
+
+
 def handle_assistant_command():
     r = sr.Recognizer()  # Initialize Recognizer here
+    active_sound = threading.Thread(target=assistant_sound)
+    active_sound.start()
     print("Assistant started. You have 1 minute to respond.")
+
     start_time = time.time()
 
     while time.time() - start_time < 60:
