@@ -1,5 +1,5 @@
 import openai
-import chatbot
+# import chatbot
 import time
 import speech_recognition as sr
 import datetime
@@ -9,7 +9,7 @@ import subprocess
 import webbrowser
 import ecapture as ec
 import pyttsx3
-from time import ctime
+from time import ctime, sleep
 import pyaudio
 from datetime import date
 import tkinter
@@ -24,7 +24,7 @@ from clint.textui import progress
 from ecapture import ecapture as ec
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
-from playsound import playsound
+# from playsound import playsound
 import pyowm
 import pyjokes
 import urllib
@@ -34,8 +34,9 @@ import pytz
 from gtts import gTTS
 import discord
 import wikipedia
-
-token = "{Jzg8fR1lvzmwXpwC/AY3U6z6Hp5ZCteTV5}"
+if os.name == "nt":
+    import win32api
+    from win32con import VK_MEDIA_PLAY_PAUSE, VK_MEDIA_NEXT_TRACK, VK_MEDIA_PREV_TRACK, KEYEVENTF_EXTENDEDKEY
 
 # Get the current date and time
 now = datetime.datetime.now()
@@ -102,7 +103,7 @@ def main():
 
 def handle_assistant_command():
     r = sr.Recognizer()  # Initialize Recognizer here
-    print("Assistant started. You have 1 minute.")
+    print("Assistant started. You have 1 minute to respond.")
     start_time = time.time()
 
     while time.time() - start_time < 60:
@@ -113,17 +114,9 @@ def handle_assistant_command():
             command = r.recognize_google(audio).lower()
             print(f"Recognized: {command}")
             command1 = r.recognize_google(audio).lower()
-            print(f"Recognized: {command1}")
-# I don't need these anymore because I've left school... 
-             # Open Timetables
-            if "week a" in command1:
-                pyttsx3.speak("Sir your timetable for Week A..... is showing now")
-                img = Image.open('C:/Users/DRIP/Week A.png')
-                img.show()                                
-            if "week b" in command:
-                pyttsx3.speak("Sir your timetable for Week B...... is showing now")
-                img1 = Image.open('C:/Users/DRIP/Week B.png')
-                img.show()
+
+            if "orange powder" in command1:
+                pyttsx3.speak("orange powder recognized")
 # Will need
             if '80s playlist' in command1:
                 webbrowser.open("https://open.spotify.com/playlist/1V4f7gzXjnHpSlR78q1Zpb?si=fcfbbbaa7d884c2a")
@@ -134,7 +127,23 @@ def handle_assistant_command():
             if 'family friendly playlist' in command1:
                 webbrowser.open("https://open.spotify.com/playlist/7mHRDFTl5YMNeorVfcYA1u?si=b35bb9b2c1d24f89")
                 pyttsx3.speak("family friendly playlist is playing now")
-
+            # Media Control Commands (Windows Only)
+            if os.name == "nt":
+                if 'play' in command1 or 'pause' in command1:
+                    win32api.keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_EXTENDEDKEY, 0)
+                    print("playing/pausing")
+                if 'next' in command1 or 'skip' in command1:
+                    win32api.keybd_event(VK_MEDIA_NEXT_TRACK, 0, KEYEVENTF_EXTENDEDKEY, 0)
+                    print("skipping")
+                if 'previous' in command1 or 'go back' in command1:
+                    print("going back")
+                    win32api.keybd_event(VK_MEDIA_PREV_TRACK, 0, KEYEVENTF_EXTENDEDKEY, 0)
+                    time.sleep(0.5)
+                    win32api.keybd_event(VK_MEDIA_PREV_TRACK, 0, KEYEVENTF_EXTENDEDKEY, 0)
+                if 'repeat' in command1:
+                    win32api.keybd_event(VK_MEDIA_PREV_TRACK, 0, KEYEVENTF_EXTENDEDKEY, 0)
+                    print("repeating")
+            else: print("Feature only avalable on Windows")
 # Would I also need the JOke API because BARD???
             # Check if the user asked for a joke
             if 'joke' in command:
@@ -187,6 +196,8 @@ def handle_assistant_command():
             print(f"Could not request results; {e}")
         except sr.UnknownValueError:
             print("Could not understand audio")
+        return None
+    print()
 
 if __name__ == "__main__":
     r = sr.Recognizer() 
