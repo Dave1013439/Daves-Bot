@@ -1,15 +1,14 @@
+import openai
+import chatbot
+import time
+import speech_recognition as sr
 import datetime
 import json
 import os
 import subprocess
 import webbrowser
 import ecapture as ec
-import requests
-import speech_recognition as sr
-import wikipedia
-import openai
 import pyttsx3
-import time 
 from time import ctime
 import pyaudio
 from datetime import date
@@ -26,244 +25,170 @@ from ecapture import ecapture as ec
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from playsound import playsound
-import pytz
 import pyowm
-import pytz
 import pyjokes
 import urllib
 from PIL import Image
 import tweepy
+import pytz
+from gtts import gTTS
+import discord
+import wikipedia
 
-# Setting up APIs
-# Set your OpenAi API key
-openai.api_key = ""
-
-# Create a PyOWM client
-owm = pyowm.OWM('')
-
-# define API key and URL
-API_KEY = "API"
-URL = ""
-
-# Initalize the text to-speech engine
-engine = pyttsx3.init()
-
-def transcribe_auido_to_text(filename):
-    recognizer = sr.Recognizer()
-    with sr.AudioFile(filename) as source:
-        audio = recognizer.record(source)
-    try:
-        return recognizer.recognize_google(audio)
-    except:
-        print('skipping unknow error')
-    
-def generate_response(prompt):
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=prompt,
-        max_tokens=4000,
-        n=1,
-        stop=None,   
-        temperature=0.1,
-    )
-    return response["choices"][0]["text"]
-
-# speech engine initialisation
-engine=pyttsx3.init()
-voices=engine.getProperty('voices')
-engine.setProperty('voice','voices[1].id') # 0 = male, 1 = female
-activationword = 'assistant' # single word
-
-def speak(text, rate = 230):
-    engine.setProperty('rate', rate)
-    engine.say(text)
-    engine.runAndWait()
-
-def parseCommand():
-    listener = sr.Recognizer()
-    print('Listening for a command')
-
-    with sr.Microphone() as source:
-        listener.pause_threshold = 2
-        imput_speech = listener.listen(source)
-
-    try:
-        print('Recognizing speech...')
-        query = listener.recognize_google(imput_speech, language="en_gb")
-        print(f'The input speech was: {query}')
-
-    except Exception as exception:
-        print('I did not quite get that please say that again?')
-        print(exception)
-        return 'None'
-
-    return query
-
-if __name__ == '__main__': 
-    speak('All systems booting.............Sir I am online.......')
-
-def speak_text(text):
-    engine.say(text)
-    engine.runAndWait()
+token = "{Jzg8fR1lvzmwXpwC/AY3U6z6Hp5ZCteTV5}"
 
 # Get the current date and time
 now = datetime.datetime.now()
 
-# Starter up Time
-speak("Sir the current date and time is: ")
-speak(now.strftime("%m-%d-%Y %I:%M %p"))
-playsound("C:/Users/dm676/Desktop/Code is FUN/Dave's Voice Activated Assistant/Beep101.mp3")
+INITIAL_STATE = 0
+AFTER_HOW_ARE_YOU = 1
 
-# Set the time zones for Brisbane and New York
-brisbane_tz = pytz.timezone('Australia/Brisbane')
-new_york_tz = pytz.timezone('America/New_York')
+current_state = INITIAL_STATE
 
-# Fetch current time in Brisbane
-brisbane_time = datetime.datetime.now(brisbane_tz)
-print("Current time in Brisbane: ", brisbane_time.strftime("%m-%d-%Y %I:%M %p"))
-
-# Fetch current time in New York
-new_york_time = datetime.datetime.now(new_york_tz)
-print("Current time in New York: ", new_york_time.strftime("%m-%d-%Y %I:%M %p"))
-
-# Define a function to get the current time in a specific time zone
-def get_current_time(timezone):
-    now = datetime.datetime.now(timezone)
-    current_time = now.strftime("%m-%d-%Y %I:%M %p") 
-    return current_time
-
-# Use a random joke API to get a random joke
+# Get a random joke
 def get_joke():
     url = "https://official-joke-api.appspot.com/random_joke"
     response = requests.get(url)
     json_data = json.loads(response.text)
     joke = json_data['setup'] + " " + json_data['punchline']
     return joke
+# Open website
+def open_website():
+    website_url = "https://www.example.com"  # Replace with the URL you want to open
+    webbrowser.open(website_url)
+    print(f"Opening website: {website_url}")
+
+def handle_user_input(user_input):
+    global current_state
+    if current_state == AFTER_HOW_ARE_YOU:
+        # Check if the user's response contains "good," "alright," "fine," or "tired"
+        if any(word in user_input for word in ["good", "alright", "fine", "tired"]):
+            response = "That's good to hear, keep going sir."
+            pyttsx3.speak(response)
+            current_state = INITIAL_STATE
+        else:
+            print("User response not recognized. Please respond with 'good,' 'alright,' 'fine,' or 'tired'.")
+
+# Starter up Time
+pyttsx3.speak("Sir the current date and time is: ")
+pyttsx3.speak(now.strftime("%m-%d-%Y %I:%M %p"))
 
 def main():
     while True:
-        # Wait for user to say ""
-        print("Say 'assistant' to start recording your question...")
-        with sr.Microphone() as source:
-            recognizer = sr.Recognizer()
-            audio = recognizer.listen(source)
-            try:
-                transcription = recognizer.recognize_google(audio)
-                if transcription.lower() == "assistant":
-                        # Record audio
-                        filename = "input.wav"
-                        print("say your question sir")
-                        speak("say your question sir")
-                        with sr.Microphone() as source:
-                            recognizer =sr.Recognizer()
-                            source.pause_threshold = 1
-                            audio = recognizer.listen(source, phrase_time_limit=None, timeout=None)
-                            with open(filename, "wb") as f:
-                                f.write(audio.get_wav_data())                
+        try:
+            # Listen for 60 seconds
+            with sr.Microphone() as source:
+                print("Listening...")
+                audio = r.listen(source, timeout=60)  
+                print("Processing...")
+                
+            # Recognize speech using Google Web Speech API
+            command = r.recognize_google(audio).lower()
+            print(f"Recognized: {command}")
 
-                        # Transcribe audio to text
-                        text = transcribe_auido_to_text(filename)
-                        if text:
-                            print(f"you said: {text}")
+            if "assistant" in command:
+                handle_assistant_command()
+            else:
+                pyttsx3.speak("Sorry sir I could not understand you.......... Please try again")
+            
+        except sr.WaitTimeoutError:
+            print("Sir I have not been used in 60 sec, I am shutting down now.")
+            pyttsx3.speak("Sir I have not been used in 60 seconds, I am shutting down now.")
+            time.sleep(1)
+        except sr.RequestError as e:
+            print(f"Could not request results; {e}")
+        except sr.UnknownValueError:
+            print("Could not understand audio")
 
-                            # Generate response using GPT-3
-                            response = generate_response(text)
-                            print(f"Ai says: {response}")
- 
-                            # Open Timetable
-                            if "week a" in response:
-                                speak("Sir your timetable for Week A..... is showing now")
-                                img = Image.open('C:/Users/dm676/Desktop/Week A.png')
-                                img.show()                                
-                            # Open TimeTable B
-                            if "week b" in response:
-                                speak("Sir your timetable for Week B...... is showing now")
-                                img1 = Image.open("C:/Users/dm676/Desktop/Week B.png")
-                                img.show()
-                            # Open Website 
-                            elif 'YouTube' in response:
-                                webbrowser.open("https://www.youtube.com")
-                                speak("Sir YouTube is opening now")
-                                time.pause()
-                            elif 'Gmail' in response:
-                                webbrowser.open("https://www.gmail.com")
-                                speak("Checking your emails now sir.....Gmail is opening now")
-                                time.pause()
-                            elif 'Spotify' in response:
-                                webbrowser.open("https://www.spotify.com")
-                                speak("Sir Spotify is opening now")
-                                time.pause()
-                            elif 'Outlook' in response:
-                                webbrowser.open("https://www.outlook.com")
-                                speak("Sir I am checking your emails from Outlook now.........Outlook is opening now ")            
-                                time.pause()        
-                            elif 'Discord' in response:
-                                webbrowser.open("https://www.discord.com")
-                                speak("Sir I am connecting with Discord now............Discord is opening now")
-                                time.pause()
-                            elif 'Google' in response:
-                                webbrowser.open("https://www.google.com")
-                                speak("Finding some information sir........Google is opening now")
-                                time.pause()
-                            elif 'Weather' in response:
-                                webbrowser.open("https://weather.com/en-AU/weather/today/l/36d83d8b49b77ab1fd010d5db27b7f9fab7cde9b4155c538d9fb4eb5782bdfd6")
-                                speak("The weather......it's hot in here....haha.....Opening the Weather now")
-                                time.pause()
-                            elif 'Facebook' in response:
-                                webbrowser.open("https://www.facebook.com/")
-                                time.pause()
-                            elif 'Marketplace' in response:
-                                webbrowser.open("https://www.facebook.com/marketplace/?ref=bookmark")
-                                time.pause()
-                            elif "My time" in response:
-                                brisbane_time = get_current_time(brisbane_tz)
-                                speak("Sir the current time is........ " + brisbane_time)
-                                time.pause
-                            elif "New York time" in response:
-                                new_york_time = get_current_time(new_york_tz)
-                                speak("Sir the time for Wicked is....... " + new_york_time)
-                                time.pause
-                            # Check if the user asked for a joke
-                            elif "joke" in text.lower():
-                                joke = get_joke()
-                                print("Sir Here's a joke: " + joke)                                
-                                speak("Sir Here's a joke: " + joke)
-                                time.sleep()      
-                                time.pause
+def handle_assistant_command():
+    r = sr.Recognizer()  # Initialize Recognizer here
+    print("Assistant started. You have 1 minute.")
+    start_time = time.time()
 
-                            # Simple Human Generic Responses
-                            elif "what's up" in response:
-                                speak("Hello sir, What may I help you with?")
-                                time.pause
-                            if "Who are you" in response:
-                                speak("Sir I am a your interlectaul AI Assistant ")
-                                time.pause  
+    while time.time() - start_time < 60:
+        try:
+            with sr.Microphone() as source:
+                audio = r.listen(source, timeout=60)
+                
+            command = r.recognize_google(audio).lower()
+            print(f"Recognized: {command}")
+            command1 = r.recognize_google(audio).lower()
+            print(f"Recognized: {command1}")
+# I don't need these anymore because I've left school... 
+             # Open Timetables
+            if "week a" in command1:
+                pyttsx3.speak("Sir your timetable for Week A..... is showing now")
+                img = Image.open('C:/Users/DRIP/Week A.png')
+                img.show()                                
+            if "week b" in command:
+                pyttsx3.speak("Sir your timetable for Week B...... is showing now")
+                img1 = Image.open('C:/Users/DRIP/Week B.png')
+                img.show()
+# Will need
+            if '80s playlist' in command1:
+                webbrowser.open("https://open.spotify.com/playlist/1V4f7gzXjnHpSlR78q1Zpb?si=fcfbbbaa7d884c2a")
+                pyttsx3.speak("80s playlist is playing now")
+            if 'music playlist' in command1:
+                webbrowser.open("https://open.spotify.com/playlist/5XZsfidCnnAZUaMznHN0Al?si=37cb71a5ddf54838")
+                pyttsx3.speak("Sir your music playlist is playing now")
+            if 'family friendly playlist' in command1:
+                webbrowser.open("https://open.spotify.com/playlist/7mHRDFTl5YMNeorVfcYA1u?si=b35bb9b2c1d24f89")
+                pyttsx3.speak("family friendly playlist is playing now")
 
-                            responses1 = [
-                            "I am alright.",
-                            "I'm fine.",
-                            "I could be better but I'm alright.",
-                            "It's tough but I'm still going.",
-                            "It's hard, man.",
-                            "Sir, can I leave? I can't take it much longer.",
-                            "If I go? someone will you miss us? You nor I can leave.",
-                            "I'm going alright I'm happy today.",
-                            "Wow sir thanks for caring it's a real honor but I am going alright thanks yourself.",
-                            ]                
+# Would I also need the JOke API because BARD???
+            # Check if the user asked for a joke
+            if 'joke' in command:
+                joke = get_joke()
+                print("Sir Here's a joke: " + joke)                                
+                pyttsx3.speak("Sir Here's a joke: " + joke)
+                time.sleep(3)      
 
-                            prompt = input("Type your question: ")
+# NOT GOING TO USE BECAUSE BARD WILL DO IT FOR ME
 
-                            if "how are you" in prompt.lower():
-                                # this is your list
-                                random_response = random.choice(responses1)
-                            else:
-                                # this is the bot
-                                random_response = generate_response(prompt)                            
+            if "who are you" in command:
+                pyttsx3.speak("Sir I am a your intellectual AI Assistant ")    
+            if "how are you" in command:
+                # this is your list
+                responses1 = [
+                "I am alright.",
+                "I'm fine ..... thankyou for asking",
+                "I could be better ......... but I'm alright.",
+                "It's tough......... but I'm still going........ yay me.",
+                "It's hard, mannn.",
+                "Sir......can I leave?........I can't take it much longer.",
+                "I'm feeling pretty good, thanks. How's your day shaping up?",
+                "I'm going alright......... I'm happy today......... How are you",
+                "Wow sir ...........thanks for caring.......... it's a real honor......... but I am going alright thanks ....yourself.",
+                "I'm doing great, thanks! How about you?",
+                "I'm good, just keeping busy. How are things with you?",
+                "I'm feeling fantastic today! How's your day going?",
+                "I'm doing well, thanks for asking. How's everything on your end?",
+                "I'm pretty good, all things considered. How about yourself?",
+                "I'm feeling quite positive today. How's your day been so far?",
+                "I'm doing alright. How's life treating you these days?",
+                "I'm hanging in there, thanks for asking. How about you?",
+                "I'm not too bad, just taking it one step at a time. How are you doing?",
+                "I'm okay, thanks for checking in. How's everything in your world?",
+                ]     
+                response = random.choice(responses1)
+                pyttsx3.speak(response)
+# REST WILL DO
+           # Note taker
 
-                        # Read response using text-to-speach
-                        speak_text(response)
-            except Exception as e:
-                print("An error has occured: {}".format(e))
+           # reminder
+
+           # Discord Functions
+
+        except sr.WaitTimeoutError:
+            print("Sir I am locked. Say 'assistant' to unlock.")
+            pyttsx3.speak("Sir I am locked. Say 'assistant' to unlock.")
+            return
+        except sr.RequestError as e:
+            print(f"Could not request results; {e}")
+        except sr.UnknownValueError:
+            print("Could not understand audio")
 
 if __name__ == "__main__":
+    r = sr.Recognizer() 
     main()
+
