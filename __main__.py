@@ -1,7 +1,8 @@
 # import openai
 # import chatbot
-import time, speech_recognition as sr, datetime, json, os, subprocess, webbrowser, ecapture as ec, pyttsx3, pyaudio, random, operator, feedparser, smtplib, ctypes, requests, shutil, threading
+import time, speech_recognition as sr, datetime, json, os, subprocess, webbrowser, ecapture as ec, pyttsx3, pyaudio, random, operator, feedparser, smtplib, ctypes, requests, shutil, threading, pyautogui as pag
 from time import ctime, sleep
+from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume
 import pyaudio
 from datetime import date
 # import tkinter
@@ -13,7 +14,7 @@ from playsound import playsound
 # import pyowm
 # import pyjokes
 # import urllib
-from PIL import Image
+# from PIL import Image
 # import tweepy
 # import pytz
 from gtts import gTTS
@@ -21,18 +22,25 @@ from gtts import gTTS
 # import wikipedia
 if os.name == "nt":
     import win32api
-    from win32con import VK_MEDIA_PLAY_PAUSE, VK_MEDIA_NEXT_TRACK, VK_MEDIA_PREV_TRACK, KEYEVENTF_EXTENDEDKEY
+    from win32con import VK_MEDIA_PLAY_PAUSE, VK_MEDIA_NEXT_TRACK, VK_MEDIA_PREV_TRACK, KEYEVENTF_EXTENDEDKEY, VK_VOLUME_DOWN, VK_VOLUME_UP, VK_VOLUME_MUTE
 
 from pydub import AudioSegment
 from pydub.playback import play
+from geopy.geocoders import Nominatim
 
 # Get the current date and time
 now = datetime.datetime.now()
+user_home = os.path.expanduser("~")
 
 INITIAL_STATE = 0
 AFTER_HOW_ARE_YOU = 1
 
 current_state = INITIAL_STATE
+
+def googleTTS(text: str):
+    tts = gTTS(text)
+    tts.save("temp.mp3")
+    playsound("temp.mp3")
 
 # Get a random joke
 def get_joke():
@@ -59,8 +67,8 @@ def handle_user_input(user_input):
             print("User response not recognized. Please respond with 'good,' 'alright,' 'fine,' or 'tired'.")
 
 # Starter up Time
-pyttsx3.speak("Sir the current date and time is: ")
-pyttsx3.speak(now.strftime("%m-%d-%Y %I:%M %p"))
+# pyttsx3.speak("Sir the current date and time is: ")
+# pyttsx3.speak(now.strftime("%m-%d-%Y %I:%M %p"))
 
 def main():
     while True:
@@ -78,11 +86,11 @@ def main():
             if "assistant" in command:
                 handle_assistant_command()
             else:
-                pyttsx3.speak("Sorry sir I could not understand you.......... Please try again")
+                None
             
         except sr.WaitTimeoutError:
             print("Sir I have not been used in 60 sec, I am shutting down now.")
-            pyttsx3.speak("Sir I have not been used in 60 seconds, I am shutting down now.")
+            # pyttsx3.speak("Sir I have not been used in 60 seconds, I am shutting down now.")
             time.sleep(1)
         except sr.RequestError as e:
             print(f"Could not request results; {e}")
@@ -90,29 +98,81 @@ def main():
             print("Could not understand audio")
 
 def assistant_sound():
-    sound_file = os.path.join(os.getcwd().replace("\\", "/"), "sounds/assistant_activated.mp3")
-    playsound(sound_file)
+    try:
+        sound_file = os.path.join(os.getcwd().replace("\\", "/"), "sounds/assistant_activated.mp3")
+        playsound(sound_file)
+        return True
+    except: print("Error playing Sound Effect")
 
 
 def handle_assistant_command():
     r = sr.Recognizer()  # Initialize Recognizer here
     active_sound = threading.Thread(target=assistant_sound)
     active_sound.start()
-    print("Assistant started. You have 1 minute to respond.")
+    print("Assistant started. You have one minute until timeout.")
 
     start_time = time.time()
 
-    while time.time() - start_time < 60:
+    while 1 == 1: # time.time() - start_time < 60:
         try:
             with sr.Microphone() as source:
                 audio = r.listen(source, timeout=60)
                 
-            command = r.recognize_google(audio).lower()
+            command = command1 = r.recognize_google(audio).lower()
             print(f"Recognized: {command}")
-            command1 = r.recognize_google(audio).lower()
 
             if "orange powder" in command1:
                 pyttsx3.speak("orange powder recognized")
+
+            if command1.startswith("write "):
+                pag.typewrite(command1.lstrip("write "))
+
+            if "dictate" in command1:
+                print("Entering dictation mode")
+                while 1:
+                    try:
+                        with sr.Microphone() as source:
+                            d = r.recognize_google(r.listen(source, timeout=60))
+                        if d.lower().startswith("exit dictation"):
+                            break
+                        if d.lower().startswith("new line") or d.startswith("next line"):
+                            pag.typewrite("\n")
+                        else:
+                            print(f"Typing in: {d}") 
+                            pag.typewrite(d)
+                    except sr.UnknownValueError:
+                        print("unrecognized")
+
+            if "mouse" in command1:
+                print("Entering mouse mode")
+                while 1:
+                    try:
+                        x, y = pag.position()
+                        with sr.Microphone() as source:
+                            d = r.recognize_google(r.listen(source, timeout=60))
+                        if d.lower().startswith("exit"): break
+                        if d.lower().startswith("light"): moveby = 20
+                        elif d.lower().startswith("super"): moveby = 200
+                        else: moveby = 100
+
+                        if not "drag" in d:
+                            if "up" in d: pag.moveTo(x, y - moveby)
+                            elif "left" in d: pag.moveTo(x - moveby, y)
+                            elif "down" in d: pag.moveTo(x, y + moveby)
+                            elif "right" in d: pag.moveTo(x + moveby, y)
+                        else:
+                            if "up" in d: pag.dragTo(x, y - moveby, 1)
+                            elif "left" in d: pag.dragTo(x - moveby, y, 1)
+                            elif "down" in d: pag.dragTo(x, y + moveby, 1)
+                            elif "right" in d: pag.dragTo(x + moveby, y, 1)
+                            
+                        if "click" in d: pag.click()
+
+                    except sr.UnknownValueError:
+                        print("unrecognized")
+
+                        
+
 # Will need
             if '80s playlist' in command1:
                 webbrowser.open("https://open.spotify.com/playlist/1V4f7gzXjnHpSlR78q1Zpb?si=fcfbbbaa7d884c2a")
@@ -139,7 +199,16 @@ def handle_assistant_command():
                 if 'repeat' in command1:
                     win32api.keybd_event(VK_MEDIA_PREV_TRACK, 0, KEYEVENTF_EXTENDEDKEY, 0)
                     print("repeating")
+                if "volume up" in command1 or "louder" in command1:
+                    win32api.keybd_event(VK_VOLUME_UP, 0, KEYEVENTF_EXTENDEDKEY, 0)
+                if "volume down" in command1 or "quieter" in command1:
+                    win32api.keybd_event(VK_VOLUME_DOWN, 0, KEYEVENTF_EXTENDEDKEY, 0)
+                if "mute" in command1:
+                    win32api.keybd_event(VK_VOLUME_MUTE, 0, KEYEVENTF_EXTENDEDKEY, 0)
             else: print("Feature only avalable on Windows")
+            #if "set volume" in command1:
+            #    cmdlist = command1.split()
+            #    volume.SetMasterVolume(float(cmdlist[len(cmdlist-1)]) / 100, None)
 # Would I also need the JOke API because BARD???
             # Check if the user asked for a joke
             if 'joke' in command:
@@ -185,12 +254,13 @@ def handle_assistant_command():
            # Discord Functions
 
         except sr.WaitTimeoutError:
-            print("Sir I am locked. Say 'assistant' to unlock.")
-            pyttsx3.speak("Sir I am locked. Say 'assistant' to unlock.")
+            # print("Sir I am locked. Say 'assistant' to unlock.")
+            # pyttsx3.speak("Sir I am locked. Say 'assistant' to unlock.")
             return
         except sr.RequestError as e:
             print(f"Could not request results; {e}")
         except sr.UnknownValueError:
+            pyttsx3.speak("Sorry sir I could not understand you. Please try again.")
             print("Could not understand audio")
         return None
     print()
