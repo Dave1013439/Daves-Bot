@@ -1,6 +1,6 @@
 # import openai
 # import chatbot
-import time, speech_recognition as sr, datetime, json, os, subprocess, webbrowser, ecapture as ec, pyttsx3, pyaudio, random, operator, feedparser, smtplib, ctypes, requests, shutil, threading, pyautogui as pag
+import time, speech_recognition as sr, datetime, json, os, subprocess, webbrowser, ecapture as ec, pyttsx3, pyaudio, random, operator, feedparser, smtplib, ctypes, requests, shutil, threading, pyautogui as pag, wikipedia
 from time import ctime, sleep
 from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume
 import pyaudio
@@ -23,10 +23,7 @@ from gtts import gTTS
 if os.name == "nt":
     import win32api
     from win32con import VK_MEDIA_PLAY_PAUSE, VK_MEDIA_NEXT_TRACK, VK_MEDIA_PREV_TRACK, KEYEVENTF_EXTENDEDKEY, VK_VOLUME_DOWN, VK_VOLUME_UP, VK_VOLUME_MUTE
-
-from pydub import AudioSegment
-from pydub.playback import play
-from geopy.geocoders import Nominatim
+import module
 
 # Get the current date and time
 now = datetime.datetime.now()
@@ -119,6 +116,7 @@ def handle_assistant_command():
                 audio = r.listen(source, timeout=60)
                 
             command = command1 = r.recognize_google(audio).lower()
+            commandl = command.split()
             print(f"Recognized: {command}")
 
             if "orange powder" in command1:
@@ -133,13 +131,48 @@ def handle_assistant_command():
                     try:
                         with sr.Microphone() as source:
                             d = r.recognize_google(r.listen(source, timeout=60))
+                            print(d)
                         if d.lower().startswith("exit dictation"):
                             break
-                        if d.lower().startswith("new line") or d.startswith("next line"):
-                            pag.typewrite("\n")
+                        elif d.lower().startswith("new line") or d.startswith("next line"):
+                            pag.write("\n")
+                        elif d.lower().startswith("insert definition for"):
+                            final = ""
+                            q = d.split()
+                            for item in range(2, len(q)):
+                                final = f"{final} {q[item]}"
+                            definition = wikipedia.summary(final, sentences=2)
+                            print(f"Inserting: \n {definition}")
+                            pag.write(definition)
+                        elif d.lower().startswith("select"):
+                            if "all" in d.lower():
+                                pag.hotkey('ctrl', 'a')
+                            #elif "left" in d.lower():
+                            #    # pag.hotkey('ctrl', 'shift', 'left')
+                            #    pag.keyDown('crtl')
+                            #    pag.keyDown('shift')
+                            #    time.sleep(0.05)
+                            #    pag.press('left')
+                            #    time.sleep(0.05)
+                            #    pag.keyUp('crtl')
+                            #    pag.keyUp('shift')
+                            #elif "right" in d.lower():
+                            #    # pag.hotkey('ctrl', 'shift', 'right')
+                            #    pag.keyDown('crtl')
+                            #    pag.keyDown('shift')
+                            #    time.sleep(0.05)
+                            #    pag.press('right')
+                            #    time.sleep(0.05)
+                            #    pag.keyUp('crtl')
+                            #    pag.keyUp('shift')
+                        elif d.lower().startswith("move"):
+                            if "left" in d.lower():
+                                pag.hotkey('crtl', 'left')
+                            if "right" in d.lower():
+                                pag.hotkey('crtl', 'right')
                         else:
                             print(f"Typing in: {d}") 
-                            pag.typewrite(d)
+                            pag.write(d)
                     except sr.UnknownValueError:
                         print("unrecognized")
 
@@ -155,12 +188,12 @@ def handle_assistant_command():
                         elif d.lower().startswith("super"): moveby = 200
                         else: moveby = 100
 
-                        if not "drag" in d:
+                        if "move" in d:
                             if "up" in d: pag.moveTo(x, y - moveby)
                             elif "left" in d: pag.moveTo(x - moveby, y)
                             elif "down" in d: pag.moveTo(x, y + moveby)
                             elif "right" in d: pag.moveTo(x + moveby, y)
-                        else:
+                        elif "drag" in d:
                             if "up" in d: pag.dragTo(x, y - moveby, 1)
                             elif "left" in d: pag.dragTo(x - moveby, y, 1)
                             elif "down" in d: pag.dragTo(x, y + moveby, 1)
@@ -170,6 +203,15 @@ def handle_assistant_command():
 
                     except sr.UnknownValueError:
                         print("unrecognized")
+
+            if "define" in command1:
+                final = ""
+                for item in commandl:
+                    if item != "define":
+                        final = f"{final} {item}"
+                definition = wikipedia.summary(final, sentences=3)
+                print(definition)
+                pyttsx3.speak(definition)
 
                         
 
@@ -215,7 +257,11 @@ def handle_assistant_command():
                 joke = get_joke()
                 print("Sir Here's a joke: " + joke)                                
                 pyttsx3.speak("Sir Here's a joke: " + joke)
-                time.sleep(3)      
+                time.sleep(3)  
+
+            if 'run module' in command1:
+                module.runModule(commandl[len(commandl) - 1])
+
 
 # NOT GOING TO USE BECAUSE BARD WILL DO IT FOR ME
 
